@@ -54,7 +54,7 @@ class lumos(nn.Module):
             self.prt_s = data['prt_s'].to(self.device) * self.mask
             self.light = data['light'].to(self.device)
         if val or test:
-            self.name = data['name'][0]
+            self.name = data['name']
 
     def forward(self, val=False):
         transport_d_hat, transport_s_hat, albedo_hat, light_hat = self.net_model(self.input)
@@ -215,51 +215,51 @@ class lumos(nn.Module):
             if net is not None:
                 for param in net.parameters():
                     param.requires_grad = requires_grad
-    
 
     def plot_val(self, epoch=1, test=None):
         # shape of output_vs_gt_plot [B, C, H, W]
-        if test is None:
-            output_vs_gt_plot = torch.cat([
-                                self.albedo_hat.detach(), 
-                                self.albedo.detach(), 
-                                self.shading_all_hat.detach(),
-                                self.shading.detach(),
-                                self.sepc_all_hat.detach(),
-                                self.prt_s.detach(),
-                                self.rendering_all_hat.detach(),
-                                self.prt_d.detach(),
-                                self.rendering_all_hat3.detach(),
-                                (self.input * 0.5 + 0.5).detach(),
-                                ], 0)
-        else:    
-            output_vs_gt_plot = torch.cat([
-                                self.albedo_hat.detach(), 
-                                self.shading_all_hat.detach(),
-                                self.sepc_all_hat.detach(),
-                                self.rendering_all_hat.detach(),
-                                self.rendering_all_hat3.detach(),
-                                (self.input * 0.5 + 0.5).detach(),
-                                ], 0)
-            
-        out = torchvision.utils.make_grid(output_vs_gt_plot,
-                                        scale_each=False,
-                                        normalize=False,
-                                        nrow=5 if test is not None else 2).detach().cpu().numpy()
-        out = out.transpose(1, 2, 0)
-        out = np.clip(out, 0.01, 0.99)
-        scale_factor = 255
-        tensor = (out * scale_factor).astype(np.uint8)
-        img = Image.fromarray(tensor)
-        img_path = os.path.join(self.opt.out_dir, "val_imgs")
-        if test is not None:
-            img_path = os.path.join(self.opt.out_dir, test + "_imgs") 
-        os.makedirs(img_path, exist_ok=True)
-        img_dir = os.path.join(img_path, "{0}_{1}".format(epoch, self.name[:-3] + 'png'))
-        if test is not None:
-            img_dir = os.path.join(img_path, "{0}_{1}".format(test, self.name[:-3] + 'png'))
-        print('saving rendered img to {}'.format(img_dir))
-        img.save(img_dir)
+        for id in range(self.albedo_hat.shape[0]):
+            if test is None:
+                output_vs_gt_plot = torch.cat([
+                                    self.albedo_hat[id:id+1].detach(), 
+                                    self.albedo[id:id+1].detach(), 
+                                    self.shading_all_hat[id:id+1].detach(),
+                                    self.shading[id:id+1].detach(),
+                                    self.sepc_all_hat[id:id+1].detach(),
+                                    self.prt_s[id:id+1].detach(),
+                                    self.rendering_all_hat[id:id+1].detach(),
+                                    self.prt_d[id:id+1].detach(),
+                                    self.rendering_all_hat3[id:id+1].detach(),
+                                    (self.input[id:id+1] * 0.5 + 0.5).detach(),
+                                    ], 0)
+            else:    
+                output_vs_gt_plot = torch.cat([
+                                    self.albedo_hat[id:id+1].detach(), 
+                                    self.shading_all_hat[id:id+1].detach(),
+                                    self.sepc_all_hat[id:id+1].detach(),
+                                    self.rendering_all_hat[id:id+1].detach(),
+                                    self.rendering_all_hat3[id:id+1].detach(),
+                                    (self.input[id:id+1] * 0.5 + 0.5).detach(),
+                                    ], 0)
+                
+            out = torchvision.utils.make_grid(output_vs_gt_plot,
+                                            scale_each=False,
+                                            normalize=False,
+                                            nrow=2 if test is not None else 5).detach().cpu().numpy()
+            out = out.transpose(1, 2, 0)
+            out = np.clip(out, 0.01, 0.99)
+            scale_factor = 255
+            tensor = (out * scale_factor).astype(np.uint8)
+            img = Image.fromarray(tensor)
+            img_path = os.path.join(self.opt.out_dir, "val_imgs")
+            if test is not None:
+                img_path = os.path.join(self.opt.out_dir, test + "_imgs") 
+            os.makedirs(img_path, exist_ok=True)
+            img_dir = os.path.join(img_path, "{0}_{1}".format(epoch, self.name[id][:-3] + 'png'))
+            if test is not None:
+                img_dir = os.path.join(img_path, "{0}_{1}".format(test, self.name[id][:-3] + 'png'))
+            print('saving rendered img to {}'.format(img_dir))
+            img.save(img_dir)
 
     def get_loss_name(self):
         name = ['total']

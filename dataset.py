@@ -119,7 +119,6 @@ def get_dir(opt):
         for idx, scan in enumerate(data_info):
             scan_dir = scan[0]['albedo'].split('/albedo')[0] # xxx/../0000
             scan_path.append(scan_dir)
-        
         # get scan dirs
         test_scan_dir = scan_path[::50]
         train_scan_dir = [p for p in scan_path if p not in test_scan_dir]
@@ -167,7 +166,10 @@ def create_dataset(opt):
     print(f"Dataloader {dataset_train.stage} created, length {len(dataset_train)}")
     
     dataset_val = Dataset(opt, valid_dir, light_info, stage='val')
-    dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1, shuffle=False, num_workers=opt.data_load_works)
+    if opt.distributed:
+        val_sampler = torch.utils.data.distributed.DistributedSampler(dataset_val)
+    dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=opt.batch_size, shuffle=False, num_workers=opt.data_load_works,
+                                                sampler=val_sampler if opt.distributed else None)
     print(f"Dataloader {dataset_val.stage} created, length {len(dataset_val)}")
     
     return dataloader_train, dataloader_val

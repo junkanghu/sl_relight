@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     for epoch in tqdm(range(start_epoch, opt.epochs + 1), ascii=True, desc='epoch'):
         if opt.distributed:
-            dataloader_train.sampler.set_epoch(epoch)
+            dataloader_train.sampler.set_epoch(epoch) # Used for data shuffling. If not set, no shuffling.
         for i, data in tqdm(enumerate(dataloader_train), ascii=True, desc='training iterations'):
             get_model(model).set_input(data)
             get_model(model).optimize_parameters()
@@ -48,11 +48,11 @@ if __name__ == "__main__":
             if epoch % opt.save_fre == 0:
                 get_model(model).save_ckpt(epoch)
 
-            if epoch % opt.val_fre == 0:
-                for i, data in enumerate(dataloader_val):
-                    with torch.no_grad():
-                        get_model(model).set_input(data, val=True)
-                        get_model(model).eval()
-                        get_model(model).forward(val=True)
-                        get_model(model).plot_val(epoch)
-                        get_model(model).train()
+        if epoch % opt.val_fre == 0:
+            for i, data in enumerate(dataloader_val):
+                with torch.no_grad():
+                    get_model(model).set_input(data, val=True)
+                    get_model(model).eval()
+                    get_model(model).forward(val=True)
+                    get_model(model).plot_val(epoch)
+                    get_model(model).train()
