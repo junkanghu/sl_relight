@@ -1,0 +1,7 @@
+yaml_dir: ./data_info/data.yaml
+light_dir: /nas/home/hujunkang/sh_hdr
+
+epoch: 300
+save_fre: 1
+lr: 0.0001
+
