@@ -3,7 +3,7 @@ from option import get_opt
 from model import lumos
 from tqdm import tqdm
 from utils import init_distributed_mode
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -30,11 +30,11 @@ if __name__ == "__main__":
         for i, data in tqdm(enumerate(dataloader_train), ascii=True, desc='training iterations'):
             get_model(model).set_input(data)
             get_model(model).optimize_parameters()
-            if dist.get_rank() == 0:
+            if (opt.distributed and dist.get_rank() == 0) or not opt.distributed:
                 get_model(model).gather_loss()
 
         get_model(model).update_lr(epoch)
-        if dist.get_rank() == 0:
+        if (opt.distributed and dist.get_rank() == 0) or not opt.distributed:
             # print losses and add them to writer
             loss = get_model(model).gather_loss(True)
             out = "[Epoch {} ]".format(epoch)

@@ -158,8 +158,12 @@ def get_dir(opt):
 def create_dataset(opt):
     train_dir, valid_dir, light_info = get_dir(opt)
     dataset_train = Dataset(opt, train_dir, light_info, stage='train')
-    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train)
-    dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=opt.batch_size, sampler=train_sampler)
+    if opt.distributed:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train)
+    dataloader_train = torch.utils.data.DataLoader(dataset_train,
+                                                batch_size=opt.batch_size,
+                                                num_workers=opt.data_load_works,
+                                                sampler=train_sampler if opt.distributed else None)
     print(f"Dataloader {dataset_train.stage} created, length {len(dataset_train)}")
     
     dataset_val = Dataset(opt, valid_dir, light_info, stage='val')

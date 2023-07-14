@@ -3,7 +3,7 @@ from utils import workspace_config, train_config
 def get_opt():
     parser = argparse.ArgumentParser()
     # model-independent options
-    parser.add_argument('--config', is_config_file=True,
+    parser.add_argument('--config', type=str,
                         help='config file path')
     parser.add_argument('--local_rank', type=int, default=0)
     parser.add_argument('--discard_ckpt', action='store_true')
