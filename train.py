@@ -11,6 +11,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 if __name__ == "__main__":
     opt = get_opt()
     init_distributed_mode(opt)
+    import os; print(os.environ['RANK'])
+    import sys; sys.exit(255)
     dataloader_train, dataloader_val = create_dataset(opt)
     model = lumos(opt).to(torch.device("cuda", opt.local_rank))
 
