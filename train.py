@@ -12,12 +12,14 @@ if __name__ == "__main__":
     opt = get_opt()
     init_distributed_mode(opt)
     dataloader_train, dataloader_val = create_dataset(opt)
-    model = lumos(opt)
+    model = lumos(opt).to(torch.device("cuda", opt.local_rank))
 
     # configure ddp
     get_model = lambda model: model.module if opt.distributed else model
     if opt.distributed:
-        model = DDP(model.cuda(), device_ids=[opt.local_rank], output_device=opt.local_rank)
+        # replace bn with synbn which uses data from all processes to determine the bn parameters.
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank)
         if dist.get_rank() == 0:
             writer = SummaryWriter(opt.out_dir)
     else:
