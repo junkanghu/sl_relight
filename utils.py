@@ -3,7 +3,7 @@ import yaml
 import torch
 
 def workspace_config(opt):
-    workspace = os.getenv['workspace']
+    workspace = os.getenv('workspace')
     if workspace is not None:
         os.makedirs(workspace, exist_ok=True)
         opt.out_dir = os.path.join(workspace, opt.out_dir)
