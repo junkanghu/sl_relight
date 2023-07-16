@@ -3,10 +3,11 @@ import yaml
 import torch
 
 def workspace_config(opt):
-    workspace = os.environ['workspace']
-    if opt.rank == 0:
+    workspace = os.getenv['workspace']
+    if workspace is not None:
         os.makedirs(workspace, exist_ok=True)
-    opt.out_dir = os.path.join(workspace, 'results')
+        opt.out_dir = os.path.join(workspace, opt.out_dir)
+        opt.log_dir = os.path.join(workspace, opt.log_dir)
     return opt
 
 def train_config(opt):

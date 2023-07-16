@@ -1,12 +1,32 @@
-1. 非pretraine时，如果要fine tune albedo，默认使用albedo_vgg和albedo_gan。此时--vgg或--vgg_api只对shad有用。
-2. 在pretrain normal的时候可以通过--normal_vgg来选择是否对normal施加vgg loss。默认只含有l1loss以及点乘loss。
-3. 在pretrain albedo的时候可以通过--normal_tune来选择是否对normal进行fine tune（即改变其网络参数），默认不进行fine tune。指定--normal_tune之后，也可以指定--normal_vgg来选择是否对fine tune的normal施加vgg loss。
-4. 在train整个pipeline时，可以用--normal_tune或--albedo_tune来选择是否对它们进行fine tune。同样地，可以指定--normal_vgg选择是否用这个loss对normal进行fine tune。注意，在整个pipeline中，--vgg或者--vgg_api只对shad施加loss，而albedo默认就有vgg loss和gan loss。
-5. 在pretrain_normal或者非pretrain时，如果不对前面stage的net进行tune，则默认不在ckpt中保存没有更新过的前面stage的网络参数以节省空间，因此当continue时，要从前面stage的results dir去读取不会改变的网络参数。但是如果进行了tune，就会在当前stage的ckpt中保存tune完后的网络参数。
+# How to run the training code?
 
-## code
-
-### normal
+## Not on ant cluster with ddp.
 ``` shell
-CUDA_VISIBLE_DEVICES="0,1,2,3" python -m torch.distributed.launch --nproc_per_node 4 --master_port 32770 train.py --config ./config/train.txt --batch_size 8 --pretrain_normal --train_ldr --debug_size 512 --epoch 100 --out_dir ./results_normal
+DEFAULT_FREE_PORT=9849 &&\
+workspace=xxx OMP_NUM_THREADS=96 \
+python -m torch.distributed.launch --nproc_per_node 8 \
+--master_addr ${MASTER_IP:-127.0.0.1} \
+--master_port ${MASTER_PORT:-$DEFAULT_FREE_PORT} \
+--nnodes ${NODE_SIZE:-1} \
+--node_rank ${NODE_RANK:-0}
 ```
+Here, ```DEFAULT_FREE_PORT``` is set by user. ```workspace``` shoule be the output directory, if not run the code on ant cluster, it should be ```./``` so that the results will be saved under the code directory.
+
+## On ant cluster with ddp.
+``` shell
+workspace=xxx OMP_NUM_THREADS=96 \
+python -m torch.distributed.launch --nproc_per_node 8 \
+--master_addr ${MASTER_IP:-127.0.0.1} \
+--master_port ${MASTER_PORT:-$DEFAULT_FREE_PORT} \
+--nnodes ${NODE_SIZE:-1} \
+--node_rank ${NODE_RANK:-0}
+```
+The differences between running on cluster and lab server: 
+1. We don't need to set ```DEFAULT_FREE_PORT```, bacause it is set by cluster by default.
+2. We should set the workspace as ```/input/pihuaijin/workspaces/relight```, because the working directory for the code is temporary which will be deleted after the code is finished.
+
+## Without ddp
+``` shell
+OMP_NUM_THREADS=96 python train.py
+```
+If the code is ran on the lab server which just saves the output under the code directory, we don't need to explicitly set ```workspace```, the default one is under the code directory. **However, we do need to caution that the output dir should not be ./results but results. See the code in utils workspace_config**.

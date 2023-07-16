@@ -7,12 +7,13 @@ from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
+import logging
+import os
 
 if __name__ == "__main__":
     opt = get_opt()
     init_distributed_mode(opt)
-    import os; print(os.environ['RANK'])
-    import sys; sys.exit(255)
+    logging.basicConfig(filename=opt.log_dir, filemode='w', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
     dataloader_train, dataloader_val = create_dataset(opt)
     model = lumos(opt).to(torch.device("cuda", opt.local_rank))
 
@@ -22,12 +23,12 @@ if __name__ == "__main__":
         # replace bn with synbn which uses data from all processes to determine the bn parameters.
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank)
+        logging.info(f"WorldSize {os.environ['WORLD_SIZE']} Rank {os.environ['RANK']} Local_Rank {os.environ['LOCAL_RANK']}")
         if dist.get_rank() == 0:
             writer = SummaryWriter(opt.out_dir)
     else:
         writer = SummaryWriter(opt.out_dir)
     start_epoch = get_model(model).load_ckpt()
-
     for epoch in tqdm(range(start_epoch, opt.epochs + 1), ascii=True, desc='epoch'):
         if opt.distributed:
             dataloader_train.sampler.set_epoch(epoch) # Used for data shuffling. If not set, no shuffling.
@@ -47,6 +48,7 @@ if __name__ == "__main__":
                 writer.add_scalar(key, average, epoch)
                 out += (key + ": " + str(average) + ("\n" if idx == len(loss.keys()) - 1 else " "))
             tqdm.write(out)
+            logging.info(out)
             
             # save ckpt
             if epoch % opt.save_fre == 0:
