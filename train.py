@@ -13,7 +13,7 @@ import os
 if __name__ == "__main__":
     opt = get_opt()
     init_distributed_mode(opt)
-    logging.basicConfig(filename=opt.log_dir, filemode='w', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+    logging.basicConfig(filename=opt.log_dir, filemode='a', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
     dataloader_train, dataloader_val = create_dataset(opt)
     model = lumos(opt).to(torch.device("cuda", opt.local_rank))
 
