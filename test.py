@@ -14,11 +14,9 @@ import numpy as np
 if __name__ == "__main__":
     opt = get_opt()
     opt.test = True
-    test_dir = get_dir(opt)
     model = lumos(opt)
     model.load_ckpt(True)
-    dataset_test = Dataset(opt, test_dir, stage='test')
-    dataloader_test = create_dataset(opt, dataset_test, shuffle=False, val=True)
+    dataloader_test = create_dataset(opt)
     for i, data in enumerate(dataloader_test):
         with torch.no_grad():
             model.set_input(data, test=True)

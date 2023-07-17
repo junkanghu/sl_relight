@@ -155,21 +155,27 @@ def get_dir(opt):
         return (input_dir, mask_dir, name)
 
 def create_dataset(opt):
-    train_dir, valid_dir, light_info = get_dir(opt)
-    dataset_train = Dataset(opt, train_dir, light_info, stage='train')
-    if opt.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train)
-    dataloader_train = torch.utils.data.DataLoader(dataset_train,
-                                                batch_size=opt.batch_size,
-                                                num_workers=opt.data_load_works,
-                                                sampler=train_sampler if opt.distributed else None)
-    print(f"Dataloader {dataset_train.stage} created, length {len(dataset_train)}")
+    if not opt.test:
+        train_dir, valid_dir, light_info = get_dir(opt)
+        dataset_train = Dataset(opt, train_dir, light_info, stage='train')
+        if opt.distributed:
+            train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train)
+        dataloader_train = torch.utils.data.DataLoader(dataset_train,
+                                                    batch_size=opt.batch_size,
+                                                    num_workers=opt.data_load_works,
+                                                    sampler=train_sampler if opt.distributed else None)
+        print(f"Dataloader {dataset_train.stage} created, length {len(dataset_train)}")
+        
+        dataset_val = Dataset(opt, valid_dir, light_info, stage='val')
+        if opt.distributed:
+            val_sampler = torch.utils.data.distributed.DistributedSampler(dataset_val)
+        dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=opt.batch_size, shuffle=False, num_workers=opt.data_load_works,
+                                                    sampler=val_sampler if opt.distributed else None)
+        print(f"Dataloader {dataset_val.stage} created, length {len(dataset_val)}")
     
-    dataset_val = Dataset(opt, valid_dir, light_info, stage='val')
-    if opt.distributed:
-        val_sampler = torch.utils.data.distributed.DistributedSampler(dataset_val)
-    dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=opt.batch_size, shuffle=False, num_workers=opt.data_load_works,
-                                                sampler=val_sampler if opt.distributed else None)
-    print(f"Dataloader {dataset_val.stage} created, length {len(dataset_val)}")
-    
-    return dataloader_train, dataloader_val
+        return dataloader_train, dataloader_val
+    else:
+        test_dir = get_dir(opt)
+        dataset_test = Dataset(opt, test_dir, stage='test')
+        dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1, shuffle=False, num_workers=opt.data_load_works)
+        return dataloader_test
