@@ -239,7 +239,7 @@ class lumos(nn.Module):
                                     self.sepc_all_hat[id:id+1].detach(),
                                     self.rendering_all_hat[id:id+1].detach(),
                                     self.rendering_all_hat3[id:id+1].detach(),
-                                    (self.input[id:id+1] * 0.5 + 0.5).detach(),
+                                    ((self.input[id:id+1] * 0.5 + 0.5) * self.mask).detach(),
                                     ], 0)
                 
             out = torchvision.utils.make_grid(output_vs_gt_plot,
@@ -255,9 +255,9 @@ class lumos(nn.Module):
             if test is not None:
                 img_path = os.path.join(self.opt.out_dir, test + "_imgs") 
             os.makedirs(img_path, exist_ok=True)
-            img_dir = os.path.join(img_path, "{0}_{1}".format(epoch, self.name[id][:-3] + 'png'))
+            img_dir = os.path.join(img_path, "{0}_{1}".format(epoch, self.name[id].split('.')[0] + '.png'))
             if test is not None:
-                img_dir = os.path.join(img_path, "{0}_{1}".format(test, self.name[id][:-3] + 'png'))
+                img_dir = os.path.join(img_path, "{0}_{1}".format(test, self.name[id].split('.')[0] + '.png'))
             print('saving rendered img to {}'.format(img_dir))
             img.save(img_dir)
 

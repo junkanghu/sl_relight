@@ -61,5 +61,6 @@ def get_opt():
 
     args = parser.parse_args()
     args = workspace_config(args)
-    args = train_config(args)
+    if not args.test:
+        args = train_config(args)
     return args

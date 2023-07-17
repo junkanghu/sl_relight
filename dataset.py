@@ -80,11 +80,11 @@ class Dataset(torch.utils.data.Dataset):
             _, h, w = albedo.shape
             transport_d = permute(torch.FloatTensor(transport_d)).reshape(-1, h, w)
             transport_s = permute(torch.FloatTensor(transport_s)).reshape(-1, h, w)
-            input = self.transform_scale(prt)
+            img = self.transform_scale(prt)
             light = torch.FloatTensor(light.copy())
         
             return_dict = {
-                'input': input,
+                'input': img,
                 'prt_d': prt_d,
                 'prt_s': prt_s,
                 'shading': shading,
@@ -95,10 +95,11 @@ class Dataset(torch.utils.data.Dataset):
                 'light': light,
             }
         else:
-            input = Image.open(self.input_dir[idx1])
-            input = self.transform_scale(self.transform_img(input))
+            img = Image.open(self.input_dir[idx1])
+            img = self.transform_scale(self.transform_img(img))
+            mask = self.transform_img(mask)[:1]
             return_dict = {
-                'input': input,
+                'input': img,
                 'mask': mask,
             }
         if not self.stage == "train":
@@ -149,8 +150,8 @@ def get_dir(opt):
         name = []
         for p in img_name:
             if not p[0] == '.':
-                mask_dir.append(os.path.join(opt.test_dir, p))
-                input_dir.append(os.path.join(opt.test_dir.replace('img', 'mask'), p[:-3] + 'png'))
+                input_dir.append(os.path.join(opt.test_dir, p))
+                mask_dir.append(os.path.join(opt.test_dir.replace('img', 'mask'), p[:-3] + 'png'))
                 name.append(p.split('.')[0])
         return (input_dir, mask_dir, name)
 
