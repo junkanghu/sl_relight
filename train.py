@@ -55,10 +55,21 @@ if __name__ == "__main__":
                 get_model(model).save_ckpt(epoch)
 
         if epoch % opt.val_fre == 0:
+            ssim = []
+            psnr = []
             for i, data in enumerate(dataloader_val):
                 with torch.no_grad():
                     get_model(model).set_input(data, val=True)
                     get_model(model).eval()
                     get_model(model).forward(val=True)
-                    get_model(model).plot_val(epoch)
+                    ssim_batch, psnr_batch = get_model(model).plot_val(epoch)
                     get_model(model).train()
+                    ssim += ssim_batch
+                    psnr += psnr_batch
+            
+            if (opt.distributed and dist.get_rank() == 0) or not opt.distributed:
+                ssim = sum(ssim) / len(ssim)
+                psnr = sum(psnr) / len(psnr)
+                writer.add_scalar('ssim', ssim, epoch)
+                writer.add_scalar('psnr', psnr, epoch)
+            

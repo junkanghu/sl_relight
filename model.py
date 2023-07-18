@@ -5,9 +5,9 @@ import os
 import numpy as np
 from PIL import Image
 import net
-import cv2
 import sfloss as sfl
 import torch.nn.functional as F
+from utils import ssim, psnr
 DEBUG = False
 eps = 1e-8
 l2png = lambda x: torch.pow(x.clamp_min_(0), 1/2.2).clip(0, 1)
@@ -218,6 +218,7 @@ class lumos(nn.Module):
 
     def plot_val(self, epoch=1, test=None):
         # shape of output_vs_gt_plot [B, C, H, W]
+        psnr_group = []
         for id in range(self.albedo_hat.shape[0]):
             if test is None:
                 output_vs_gt_plot = torch.cat([
@@ -230,7 +231,7 @@ class lumos(nn.Module):
                                     self.rendering_all_hat[id:id+1].detach(),
                                     self.prt_d[id:id+1].detach(),
                                     self.rendering_all_hat3[id:id+1].detach(),
-                                    (self.input[id:id+1] * 0.5 + 0.5).detach(),
+                                    ((self.input[id:id+1] * 0.5 + 0.5) * self.mask).detach(),
                                     ], 0)
             else:    
                 output_vs_gt_plot = torch.cat([
@@ -260,6 +261,11 @@ class lumos(nn.Module):
                 img_dir = os.path.join(img_path, "{0}_{1}".format(test, self.name[id].split('.')[0] + '.png'))
             print('saving rendered img to {}'.format(img_dir))
             img.save(img_dir)
+            
+            # calculate ssim and psnr
+            psnr_group.append(psnr(((self.input[id] * 0.5 + 0.5) * self.mask[id]).detach(), self.rendering_all_hat3[id].detach()))
+        ssim_batch = [ssim(((self.input * 0.5 + 0.5) * self.mask).detach(), self.rendering_all_hat3.detach())]
+        return ssim_batch, psnr_group
 
     def get_loss_name(self):
         name = ['total']
