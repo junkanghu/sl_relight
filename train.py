@@ -72,4 +72,3 @@ if __name__ == "__main__":
                 psnr = sum(psnr) / len(psnr)
                 writer.add_scalar('ssim', ssim, epoch)
                 writer.add_scalar('psnr', psnr, epoch)
-            
